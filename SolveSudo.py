@@ -6,7 +6,7 @@ import os
 sudoku = Sudoku.Sudoku()
 
 # read sudoku text
-loc = os.path.dirname(os.path.realpath(__file__)) + '/p1'
+loc = os.path.dirname(os.path.realpath(__file__)) + '/p2'
 with open(loc, 'r') as f:
     text = f.readlines()
 f.close()

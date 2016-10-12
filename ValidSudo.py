@@ -21,7 +21,7 @@ def validSudoku(input):
     return True
 
 # read sudoku txt
-loc = os.path.dirname(os.path.realpath(__file__)) + '/p1.a'
+loc = os.path.dirname(os.path.realpath(__file__)) + '/p2.a'
 with open(loc, 'r') as f:
     text = f.readlines()
 f.close()

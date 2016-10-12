@@ -24,18 +24,24 @@ class Sudoku:
         self.master = content
 
     def solve(self):
+        # first, add all correct numbers to queue
         self.initSweep()
+        # then alternate between logical elimination (queueProcess) and guessing
         while not self.impasse:
             self.queueProcess()
             if self.count == 81:
                 break
+            # get the square with the least number of guesses available
             x, y, c = self.getMin()
+            # get that squares possibilities
             c = self.bin2nums(c)
+            # for each possibility, create a new sudoku diagram and try to solve it
             for i in c:
                 a = self.getRow(self.master, x)
                 a[y] = 2 ** (i - 1)
                 diag = self.pushRow(self.master, x, a)
                 temp = self.printProgress(diag=diag, auto=False)
+                # if diagram conflicts, try again
                 if temp == 'fail':
                     continue
                 sudo = Sudoku()
@@ -72,6 +78,8 @@ class Sudoku:
                     return out
         return out
 
+    # for each item in queue, eliminate possibilities for members of its containing boxes, rows and columns
+    # 'a' will serve as box/row/col extract and b will serve as completion value for each one
     def queueProcess(self):
         while len(self.queue) > 0 and not self.impasse and self.count < 81:
             x, y = self.queue[0]

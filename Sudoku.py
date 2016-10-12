@@ -8,28 +8,80 @@ from math import log2
 
 
 class Sudoku:
-    def __init__(self, loc):
-        self.master = self.readPuzzle(loc)
-        if not self.master:
-            exit(76)
-        print(list(map(len, self.master)))
+    def __init__(self):
+        self.count = 0
         self.queue = []
+        self.impasse = False
         self.processed = [[False for x in range(9)] for y in range(9)]
-        print(len(self.master))
-        self.initSweep()
-        print(self.printProgress(self.master))
 
     # coverts input to array of values
-    def readPuzzle(self, loc):
-        with open(loc, 'r') as f:
-            content = f.readlines()
-        f.close()
+    def readPuzzle(self, content):
         content = [list(x)[:9] for x in content]
-        print(content)
         content = [[2 ** (int(x) - 1) if x.isdigit() else 2 ** 9 - 1 for x in y] for y in content]
         if len(content) != 9 or len(content[0]) != 9:
             return False
         return content
+
+    def solve(self):
+        self.initSweep()
+        while not self.impasse and self.count < 81:
+            self.queueProcess()
+            x, y, c = self.getMin()
+            c = self.bin2nums(c)
+            for i in c:
+                a = self.getRow(self.master, x)
+                a[y] = i
+                diag = self.pushRow(self.master, x, a)
+                temp = self.printProgress(diag=diag, auto=False)
+                sudo = Sudoku()
+                sudo.readPuzzle(temp)
+                if sudo.solve():
+
+
+        if self.count == 81:
+            return True
+        else:
+            return False
+
+    def bin2nums(self, a):
+        i = 1
+        out = []
+        while a > 0:
+            if a % 2 == 1:
+                out.append(i)
+            i += 1
+            a //= 2
+        return out
+
+    def getMin(self):
+        min = 10
+        for i in range(9):
+            for j in range(9):
+                a = self.bits(self.master[i][j])
+                if 1 < a < min:
+                    min = a
+                    out = [i, j, self.master[i][j]]
+                if min == 2:
+                    return out
+        return out
+
+    def queueProcess(self):
+        while len(self.queue) > 0 and not self.impasse and self.count < 81:
+            x, y = self.queue[0]
+            a = self.getBox(self.master, x, y)
+            b = self.getHits(a)
+            a = self.clearVals(a, b)
+            self.master = self.pushBox(self.master, x, y, a)
+            a = self.getCol(self.master, y)
+            b = self.getHits(a)
+            a = self.clearVals(a, b)
+            self.master = self.pushCol(self.master, y, a)
+            a = self.getRow(self.master, x)
+            b = self.getHits(a)
+            a = self.clearVals(a, b)
+            self.master = self.pushRow(self.master, x, a)
+            del self.queue[0]
+        pass
 
     # given y coordinate, returns array of values in containing column
     def getCol(self, diag, col):
@@ -80,23 +132,10 @@ class Sudoku:
         return out ^ 511
 
     def initSweep(self):
-        print(list(map(len, self.master)))
         for i in range(9):
-            print(list(map(len, self.master)))
-            a = self.getBox(self.master, i, (i % 3) * 3)
-            b = self.getHits(a)
-            a = self.clearVals(a, b)
-            self.master = self.pushBox(self.master, i, (i % 3) * 3, a)
-            print(list(map(len, self.master)))
-            a = self.getCol(self.master, i)
-            b = self.getHits(a)
-            a = self.clearVals(a, b)
-            self.master = self.pushCol(self.master, i, a)
-            print(list(map(len, self.master)))
-            a = self.getRow(self.master, i)
-            b = self.getHits(a)
-            a = self.clearVals(a, b)
-            self.master = self.pushRow(self.master, i, a)
+            for j in range(9):
+                if self.done(self.master[i][j]):
+                    self.queuePush(i, j)
         pass
 
     def done(self, a):
@@ -104,9 +143,12 @@ class Sudoku:
 
     # pushes to queue if necessary
     def queuePush(self, x, y):
-        if not self.processed[x][y] and self.done(self.master[x][y]):
+        if not self.processed[x][y] and self.done(self.master[x][y]) and self.master[x][y] != 0:
             self.queue.append([x, y])
             self.processed[x][y] = True
+            self.count += 1
+        elif self.master[x][y] == 0:
+            self.impasse = True
         pass
 
     def clearVals(self, a, b):
@@ -115,13 +157,32 @@ class Sudoku:
             print(a[9])
         return [x & b if not self.done(x) else x for x in a]
 
+    def bits(self, i):
+        i = i - ((i >> 1) & 0x55555555)
+        i = (i & 0x33333333) + ((i >> 2) & 0x33333333)
+        return (((i + (i >> 4) & 0xF0F0F0F) * 0x1010101) & 0xffffffff) >> 24
+
     # returns string that prints current progress of
-    def printProgress(self, diag=[]):
+    def printProgress(self, diag=[], auto=True):
         if diag == []:
             diag = self.master
-        out = '\n'.join([''.join([str(int(log2(x)) + 1) if log2(x) == log2(x) // 1 else ' ' for x in y]) for y in diag])
+        out = '\n'.join([''.join([str(int(log2(x)) + 1) if log2(x) == log2(x) // 1 else '|' for x in y]) for y in diag])
+        if auto:
+            print(out)
         return out
 
+# creat object
+sudoku = Sudoku()
 
-sudoku = Sudoku(os.path.dirname(os.path.realpath(__file__)) + '/p1')
-
+# read object into
+loc = os.path.dirname(os.path.realpath(__file__)) + '/p1'
+with open(loc, 'r') as f:
+    text = f.readlines()
+f.close()
+sudoku.readPuzzle(text)
+quit()
+if sudoku.solve():
+    print('Solution Found!')
+else:
+    print('No solution...')
+sudoku.printProgress()

@@ -39,7 +39,6 @@ class Sudoku:
                 if temp == 'fail':
                     continue
                 sudo = Sudoku()
-                print(temp)
                 sudo.readPuzzle(temp.split('\n'))
                 if sudo.solve():
                     self.master = sudo.master
@@ -146,6 +145,7 @@ class Sudoku:
                     self.queuePush(i, j)
         pass
 
+    # test if int is power of 2, i.e. complete
     def done(self, a):
         if a == 0:
             return False
@@ -153,7 +153,7 @@ class Sudoku:
 
     # pushes to queue if necessary
     def queuePush(self, x, y):
-        if not self.processed[x][y] and self.done(self.master[x][y]) and self.master[x][y] != 0:
+        if not self.processed[x][y] and self.done(self.master[x][y]):
             self.queue.append([x, y])
             self.processed[x][y] = True
             self.count += 1
@@ -161,9 +161,11 @@ class Sudoku:
             self.impasse = True
         pass
 
+    # using existing values, limit values based on solved squares
     def clearVals(self, a, b):
         return [x & b if not self.done(x) else x for x in a]
 
+    # counts number of bits (useful for shorter paths)
     def bits(self, i):
         i = i - ((i >> 1) & 0x55555555)
         i = (i & 0x33333333) + ((i >> 2) & 0x33333333)
@@ -177,7 +179,7 @@ class Sudoku:
             out = '\n'.join([''.join([str(int(log2(x)) + 1) if log2(x) == log2(x) // 1 else '|' for x in y]) for y in diag])
         except:
             out = 'fail'
-            print(self.master)
+            #print(self.master)
         if auto:
             print(out)
         return out

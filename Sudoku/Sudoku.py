@@ -9,6 +9,7 @@ from math import log2
 
 class Sudoku:
     def __init__(self):
+        self.master = []
         self.count = 0
         self.queue = []
         self.impasse = False
@@ -20,23 +21,30 @@ class Sudoku:
         content = [[2 ** (int(x) - 1) if x.isdigit() else 2 ** 9 - 1 for x in y] for y in content]
         if len(content) != 9 or len(content[0]) != 9:
             return False
-        return content
+        self.master = content
 
     def solve(self):
         self.initSweep()
-        while not self.impasse and self.count < 81:
+        while not self.impasse:
             self.queueProcess()
+            if self.count == 81:
+                break
             x, y, c = self.getMin()
             c = self.bin2nums(c)
             for i in c:
                 a = self.getRow(self.master, x)
-                a[y] = i
+                a[y] = 2 ** (i - 1)
                 diag = self.pushRow(self.master, x, a)
                 temp = self.printProgress(diag=diag, auto=False)
+                if temp == 'fail':
+                    continue
                 sudo = Sudoku()
-                sudo.readPuzzle(temp)
+                print(temp)
+                sudo.readPuzzle(temp.split('\n'))
                 if sudo.solve():
-
+                    self.master = sudo.master
+                    self.impasse = sudo.impasse
+                    return True
 
         if self.count == 81:
             return True
@@ -85,7 +93,7 @@ class Sudoku:
 
     # given y coordinate, returns array of values in containing column
     def getCol(self, diag, col):
-        return [x[col] for x in diag]
+        return list([x[col] for x in diag])
 
     # given x, y coordinates, returns array of values in containing box
     def getBox(self, diag, x, y):
@@ -95,10 +103,10 @@ class Sudoku:
         for i in range(3):
             for j in range(3):
                 out.append(diag[x * 3 + i][y * 3 + j])
-        return out
+        return list(out)
 
     def getRow(self, diag, x):
-        return diag[x]
+        return list(diag[x])
 
     def pushRow(self, diag, x, a):
         for i in range(9):
@@ -139,6 +147,8 @@ class Sudoku:
         pass
 
     def done(self, a):
+        if a == 0:
+            return False
         return log2(a) == log2(a) // 1
 
     # pushes to queue if necessary
@@ -152,9 +162,6 @@ class Sudoku:
         pass
 
     def clearVals(self, a, b):
-        if len(a) < 9:
-            print(a)
-            print(a[9])
         return [x & b if not self.done(x) else x for x in a]
 
     def bits(self, i):
@@ -166,23 +173,13 @@ class Sudoku:
     def printProgress(self, diag=[], auto=True):
         if diag == []:
             diag = self.master
-        out = '\n'.join([''.join([str(int(log2(x)) + 1) if log2(x) == log2(x) // 1 else '|' for x in y]) for y in diag])
+        try:
+            out = '\n'.join([''.join([str(int(log2(x)) + 1) if log2(x) == log2(x) // 1 else '|' for x in y]) for y in diag])
+        except:
+            out = 'fail'
+            print(self.master)
         if auto:
             print(out)
         return out
 
-# creat object
-sudoku = Sudoku()
 
-# read object into
-loc = os.path.dirname(os.path.realpath(__file__)) + '/p1'
-with open(loc, 'r') as f:
-    text = f.readlines()
-f.close()
-sudoku.readPuzzle(text)
-quit()
-if sudoku.solve():
-    print('Solution Found!')
-else:
-    print('No solution...')
-sudoku.printProgress()

@@ -29,12 +29,14 @@ class Sudoku:
         # then alternate between logical elimination (queueProcess) and guessing
         while not self.impasse:
             self.queueProcess()
+            self.printProgress()
             if self.count == 81:
                 break
             # get the square with the least number of guesses available
             x, y, c = self.getMin()
             # get that squares possibilities
             c = self.bin2nums(c)
+            print(x, y, c)
             # for each possibility, create a new sudoku diagram and try to solve it
             for i in c:
                 a = self.getRow(self.master, x)
@@ -162,6 +164,9 @@ class Sudoku:
     # pushes to queue if necessary
     def queuePush(self, x, y):
         if not self.processed[x][y] and self.done(self.master[x][y]):
+            if self.conflict(x, y, self.master[x][y]):
+                self.impasse = True
+                return True
             self.queue.append([x, y])
             self.processed[x][y] = True
             self.count += 1
@@ -169,6 +174,17 @@ class Sudoku:
             self.impasse = True
         pass
 
+    # determines if value already exists in row/col/box
+    def conflict(self, x, y, val):
+        for i in range(9):
+            if self.master[x][i] == val and y != i:
+                return True
+            if self.master[i][y] == val and x != i:
+                return True
+            if self.master[x // 3 * 3 + i % 3][y // 3 * 3 + i // 3] == val:
+                if [x // 3 * 3 + i % 3, y // 3 * 3 + i // 3] != [x, y]:
+                    return True
+        return False
     # using existing values, limit values based on solved squares
     def clearVals(self, a, b):
         return [x & b if not self.done(x) else x for x in a]

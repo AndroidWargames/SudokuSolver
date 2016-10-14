@@ -29,14 +29,12 @@ class Sudoku:
         # then alternate between logical elimination (queueProcess) and guessing
         while not self.impasse:
             self.queueProcess()
-            self.printProgress()
             if self.count == 81:
                 break
             # get the square with the least number of guesses available
             x, y, c = self.getMin()
             # get that squares possibilities
             c = self.bin2nums(c)
-            print(x, y, c)
             # for each possibility, create a new sudoku diagram and try to solve it
             for i in c:
                 a = self.getRow(self.master, x)
